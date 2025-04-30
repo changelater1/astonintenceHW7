@@ -3,10 +3,11 @@ package com.astonlabs;
 import com.astonlabs.dao.UserDao;
 import com.astonlabs.dao.UserDaoImpl;
 import com.astonlabs.model.User;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 import java.util.List;
 import java.util.Scanner;
-
+@SpringBootApplication(scanBasePackages = "com.astonlabs")
 public class Main {
     public static void main(String[] args) {
         UserDao userDao = new UserDaoImpl();

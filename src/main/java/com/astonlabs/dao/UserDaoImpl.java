@@ -4,9 +4,10 @@ import com.astonlabs.model.User;
 import com.astonlabs.util.HibernateUtil;
 import org.hibernate.Session;
 import org.hibernate.Transaction;
+import org.springframework.stereotype.Repository;
 
 import java.util.List;
-
+@Repository
 public class UserDaoImpl implements UserDao {
 
     @Override
