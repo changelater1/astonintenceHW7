@@ -2,6 +2,7 @@ package com.astonlabs.service;
 
 import com.astonlabs.dto.CreateUserDto;
 import com.astonlabs.dto.UserDto;
+import com.astonlabs.dto.UserEvent;
 import com.astonlabs.model.User;
 import com.astonlabs.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -14,10 +15,12 @@ import java.util.stream.Collectors;
 public class UserService {
 
     private final UserRepository userRepository;
+    private final KafkaProducer kafkaProducer;
 
     @Autowired
-    public UserService(UserRepository userRepository) {
+    public UserService(UserRepository userRepository, KafkaProducer kafkaProducer) {
         this.userRepository = userRepository;
+        this.kafkaProducer = kafkaProducer;
     }
 
     public List<UserDto> getAllUsers() {
@@ -35,7 +38,13 @@ public class UserService {
         user.setName(createUserDto.getName());
         user.setEmail(createUserDto.getEmail());
 
-        return toDto(userRepository.save(user));
+        User savedUser = userRepository.save(user);
+
+        // Отправляем событие в Kafka
+        UserEvent event = new UserEvent("created", savedUser.getEmail());
+        kafkaProducer.sendUserEvent(event);
+
+        return toDto(savedUser);
     }
 
     public UserDto updateUser(Long id, CreateUserDto updatedUser) {
@@ -50,6 +59,16 @@ public class UserService {
     public void deleteUser(Long id) {
         userRepository.deleteById(id);
     }
+
+    public void deleteUserByEmail(String email) {
+        User user = userRepository.findByEmail(email);
+        if (user != null) {
+            userRepository.delete(user);
+            UserEvent event = new UserEvent("deleted", email);
+            kafkaProducer.sendUserEvent(event);
+        }
+    }
+
 
     private UserDto toDto(User user) {
         UserDto dto = new UserDto();
