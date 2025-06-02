@@ -3,6 +3,7 @@ package com.astonlabs.controller;
 import com.astonlabs.dto.CreateUserDto;
 import com.astonlabs.dto.UserDto;
 import com.astonlabs.service.UserService;
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -31,14 +32,28 @@ public class UserController {
 
 
     @GetMapping("/{id}")
+    @CircuitBreaker(name = "userServiceCB", fallbackMethod = "getUserByIdFallback")
     public EntityModel<UserDto> getUserById(@PathVariable Long id) {
         UserDto user = userService.getUserById(id);
 
         return EntityModel.of(user,
                 linkTo(methodOn(UserController.class).getUserById(id)).withSelfRel(),
                 linkTo(methodOn(UserController.class).getAllUsers()).withRel("all-users"),
-                linkTo(UserController.class).slash(id).withRel("delete").withType("DELETE"), // linkTo не обрабатывает void!!!
+                linkTo(UserController.class).slash(id).withRel("delete").withType("DELETE"),
                 linkTo(methodOn(UserController.class).updateUser(id, null)).withRel("update").withType("PUT")
+        );
+    }
+
+    // Фолбэк метод с таким же параметром + Throwable
+    public EntityModel<UserDto> getUserByIdFallback(Long id, Throwable throwable) {
+        // Можно вернуть дефолтный объект или бросить исключение
+        UserDto fallbackUser = new UserDto();
+        fallbackUser.setId(id);
+        fallbackUser.setName("Fallback User");
+        // Можно логировать throwable
+
+        return EntityModel.of(fallbackUser,
+                linkTo(methodOn(UserController.class).getUserById(id)).withSelfRel()
         );
     }
 
