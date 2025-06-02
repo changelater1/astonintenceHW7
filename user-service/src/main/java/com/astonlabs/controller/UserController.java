@@ -4,6 +4,7 @@ import com.astonlabs.dto.CreateUserDto;
 import com.astonlabs.dto.UserDto;
 import com.astonlabs.service.UserService;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.hateoas.EntityModel;
 import org.springframework.hateoas.CollectionModel;
@@ -22,15 +23,10 @@ public class UserController {
         this.userService = userService;
     }
 
-    @GetMapping
-    public CollectionModel<EntityModel<UserDto>> getAllUsers() {
-        List<EntityModel<UserDto>> users = userService.getAllUsers().stream()
-                .map(user -> EntityModel.of(user,
-                        linkTo(methodOn(UserController.class).getUserById(user.getId())).withSelfRel()))
-                .toList();
 
-        return CollectionModel.of(users,
-                linkTo(methodOn(UserController.class).getAllUsers()).withSelfRel());
+    @GetMapping
+    public List<UserDto> getAllUsers() {
+        return userService.getAllUsers();
     }
 
 
