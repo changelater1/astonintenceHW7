@@ -12,6 +12,7 @@
   <modules>
     <module>user-service</module>
     <module>api-gateway</module>
+    <module>discovery-service</module>
   </modules>
 
   <properties>
