@@ -5,6 +5,10 @@ import com.astonlabs.dto.UserDto;
 import com.astonlabs.service.UserService;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.hateoas.EntityModel;
+import org.springframework.hateoas.CollectionModel;
+
+import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.*;
 
 import java.util.List;
 
@@ -19,13 +23,27 @@ public class UserController {
     }
 
     @GetMapping
-    public List<UserDto> getAllUsers() {
-        return userService.getAllUsers();
+    public CollectionModel<EntityModel<UserDto>> getAllUsers() {
+        List<EntityModel<UserDto>> users = userService.getAllUsers().stream()
+                .map(user -> EntityModel.of(user,
+                        linkTo(methodOn(UserController.class).getUserById(user.getId())).withSelfRel()))
+                .toList();
+
+        return CollectionModel.of(users,
+                linkTo(methodOn(UserController.class).getAllUsers()).withSelfRel());
     }
 
+
     @GetMapping("/{id}")
-    public UserDto getUserById(@PathVariable Long id) {
-        return userService.getUserById(id);
+    public EntityModel<UserDto> getUserById(@PathVariable Long id) {
+        UserDto user = userService.getUserById(id);
+
+        return EntityModel.of(user,
+                linkTo(methodOn(UserController.class).getUserById(id)).withSelfRel(),
+                linkTo(methodOn(UserController.class).getAllUsers()).withRel("all-users"),
+                linkTo(UserController.class).slash(id).withRel("delete").withType("DELETE"), // linkTo не обрабатывает void!!!
+                linkTo(methodOn(UserController.class).updateUser(id, null)).withRel("update").withType("PUT")
+        );
     }
 
     @PostMapping
